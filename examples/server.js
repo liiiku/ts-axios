@@ -20,9 +20,6 @@ app.use(webpackHotMiddleware(compiler))
 
 app.use(express.static(__dirname))
 
-app.use(bodyParser.json())
-app.use(bodyParser.urlencoded({ extended: true }))
-
 const router = express.Router()
 
 router.get('/simple/get', function(req, res) {
@@ -34,6 +31,30 @@ router.get('/simple/get', function(req, res) {
 router.get('/base/get', function(req, res) {
   res.json(req.query)
 })
+
+router.post('/base/post', function(req, res) {
+  // console.log(36, req.headers.token)
+  // if (req.headers.token) {
+  //   res.header('token', req.headers.token)
+  // }
+  res.json(req.body)
+})
+
+router.post('/base/buffer', function(req, res) {
+  let msg = []
+  req.on('data', (chunk) => {
+    if (chunk) {
+      msg.push(chunk)
+    }
+  })
+  req.on('end', () => {
+    let buf = Buffer.concat(msg)
+    res.json(buf.toJSON())
+  })
+})
+
+app.use(bodyParser.json())
+app.use(bodyParser.urlencoded({ extended: true }))
 
 app.use(router)
 

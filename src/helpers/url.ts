@@ -1,5 +1,5 @@
 // get 请求，将参数拼接到 url 上，返回新的 url
-import { isDate, isObject } from './util'
+import { isDate, isPlainObject } from './util'
 
 function encode(val: string): string {
   return encodeURIComponent(val)
@@ -42,7 +42,7 @@ export function buildURL(url: string, params?: any): string {
       console.log(42, val)
       if (isDate(val)) {
         val = val.toISOString()
-      } else if (isObject(val)) {
+      } else if (isPlainObject(val)) {
         val = JSON.stringify(val)
         console.log(47, val)
       }
