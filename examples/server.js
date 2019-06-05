@@ -113,6 +113,10 @@ router.get('/extend/user', function(req, res) {
   })
 })
 
+router.get('/interceptor/get', function(req, res) {
+  res.end('hello')
+})
+
 
 app.use(bodyParser.json())
 app.use(bodyParser.urlencoded({ extended: true }))

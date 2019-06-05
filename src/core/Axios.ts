@@ -1,7 +1,27 @@
-import { AxiosRequestConfig, AxiosPromise, Method } from "../types";
+import { AxiosRequestConfig, AxiosPromise, Method, AxiosResponse, ResolvedFn, RejectedFn } from "../types";
 import dispatchRequest from './dispatchRequest'
+import InterceptorManager from './interceptorManager'
+
+interface Interceptors {
+  request: InterceptorManager<AxiosRequestConfig>
+  response: InterceptorManager<AxiosResponse>
+}
+
+interface PromiseChain<T> {
+  resolved: ResolvedFn<T> | ((config: AxiosRequestConfig) => AxiosPromise)
+  rejected?: RejectedFn
+}
 
 export default class Axios {
+  interceptors: Interceptors
+
+  constructor() {
+    this.interceptors = {
+      request: new InterceptorManager<AxiosRequestConfig>(),
+      response: new InterceptorManager<AxiosResponse>()
+    }
+  }
+
   // 这里的 url 不指定为 string, 需要运行时做判断，所以这里指定为 any
   request(url: any, config?: any): AxiosPromise {
     if (typeof url === 'string') {
@@ -12,7 +32,28 @@ export default class Axios {
     } else {
       config = url // 这里只是参数名叫url，其实就是指的 axios({}) 传的的这个 {xxx} 对象
     }
-    return dispatchRequest(config)
+
+    const chain: PromiseChain<any>[] = [{
+      resolved: dispatchRequest,
+      rejected: undefined
+    }]
+
+    this.interceptors.request.forEach(interceptor => {
+      chain.unshift(interceptor)
+    })
+    this.interceptors.response.forEach(interceptor => {
+      chain.push(interceptor)
+    })
+
+    let promise = Promise.resolve(config)
+
+    while(chain.length) {
+      const { resolved, rejected } = chain.shift()!
+      promise = promise.then(resolved, rejected)
+    }
+
+    // return dispatchRequest(config)
+    return promise
   }
 
   get(url: string, config?: AxiosRequestConfig): AxiosPromise {
